@@ -1,5 +1,5 @@
 # The URL the site will be built for
-base_url = "https://pantos9000.github.com"
+base_url = "https://pantos9000.github.io"
 
 # Theme used
 theme = "terminimal"
