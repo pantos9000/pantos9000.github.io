@@ -11,8 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref != 'refs/heads/main'
     steps:
+
       - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          submodules: true
+
       - name: Build only
         uses: shalzz/zola-deploy-action@v0.18.0
         env:
@@ -25,8 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
+
       - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          submodules: true
+
       - name: Build and deploy
         uses: shalzz/zola-deploy-action@v0.18.0
         env:
