@@ -1,5 +1,15 @@
+# main config, for more options
+# see https://www.getzola.org/documentation/getting-started/configuration/
+
 # The URL the site will be built for
 base_url = "https://pantos9000.github.io"
+
+# The site title and description; used in feeds by default.
+title = "Pantos' Periphrases"
+description = "A memory aid for me and everybody who is interested"
+
+# The default language; used in feeds.
+default_language = "en"
 
 # Theme used
 theme = "terminimal"
@@ -10,19 +20,56 @@ compile_sass = true
 # Whether to build a search index to be used later on by a JavaScript library
 build_search_index = true
 
+# When set to "true", a feed is automatically generated.
+generate_feed = true
+
 # Use `rss.xml` for RSS feeds and `atom.xml` for ATOM.
 feed_filename = "atom.xml"
+
+# The default author for pages
+author = "Pantos"
 
 # Optional: enable tags
 taxonomies = [
     {name = "tags"}
 ]
 
+
 [markdown]
 # Whether to do syntax highlighting
 # Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
 highlight_code = true
-highlight_theme = "boron"
+highlight_theme = "ayu-dark"
+# highlight_theme = "one-dark"
+
+render_emoji = true
+
+
+[slugify]
+# Whether to remove date prefixes for page path slugs.
+# For example, content/posts/2016-10-08_a-post-with-dates.md => posts/a-post-with-dates
+# When true, content/posts/2016-10-08_a-post-with-dates.md => posts/2016-10-08-a-post-with-dates
+paths_keep_dates = false
+
+
+[search]
+# Whether to include the title of the page/section in the index
+include_title = true
+# Whether to include the description of the page/section in the index
+include_description = false
+# Whether to include the path of the page/section in the index
+include_path = false
+# Whether to include the rendered content of the page/section in the index
+include_content = true
+# At which character to truncate the content to. Useful if you have a lot of pages and the index would
+# become too big to load on the site. Defaults to not being set.
+truncate_content_length = 50
+
+
+# Wether to produce the search index as a javascript file or as a JSON file
+# Accepted value "elasticlunr_javascript" or "elasticlunr_json"
+index_format = "elasticlunr_json"
+
 
 [extra]
 # Put all your custom variables here
@@ -77,9 +124,6 @@ enable_post_view_navigation = true
 # before earlier/later post links.
 # Defaults to "Thanks for reading! Read other posts?"
 post_view_navigation_prompt = "View other posts"
-
-# Internationalization / translation is not supported but you can set the HTML language code
-default_language = "en"
 
 # Use full Hack character set, not just a subset.
 # Switch this to true if you need full unicode support.
