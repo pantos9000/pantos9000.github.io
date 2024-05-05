@@ -1,4 +1,4 @@
-name: Deploy Zola site to Pages
+name: Zola build
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build_only:
+    name: Build only
     runs-on: ubuntu-latest
     if: github.ref != 'refs/heads/main'
     steps:
@@ -17,7 +18,7 @@ jobs:
         with:
           submodules: true
 
-      - name: Build only
+      - name: Zola build
         uses: shalzz/zola-deploy-action@v0.18.0
         env:
           CHECK_LINKS: true
@@ -26,6 +27,7 @@ jobs:
           BUILD_FLAGS: --drafts
 
   build_and_deploy:
+    name: Build and deploy
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -35,7 +37,7 @@ jobs:
         with:
           submodules: true
 
-      - name: Build and deploy
+      - name: Zola build and deploy
         uses: shalzz/zola-deploy-action@v0.18.0
         env:
           BUILD_DIR: .
