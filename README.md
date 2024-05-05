@@ -1,10 +1,9 @@
 # Pantos' Periphrases
 
-* My own cute little tech blog
-* Made with [Zola](https://github.com/getzola/zola)
-* Available [here](https://pantos9000.github.io)
+[My own cute little tech blog](https://pantos9000.github.io) made with
+[Zola](https://github.com/getzola/zola).
 
-# Serve locally
+### Serve locally
 
 Start a local webserver with
 ```bash
