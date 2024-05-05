@@ -40,7 +40,7 @@ This can be tackled in a different way though, but let's first have alook at...
 # Multiple git identities, depending on parent directory
 
 Let's assume we have different git identities (i.e. name/email) for each of the services, and we
-want git to atomatically choose the right one.
+want git to automatically choose the right one.
 
 * Create two parent directories that each contains our repos for the according service, e.g.:
   ```bash
