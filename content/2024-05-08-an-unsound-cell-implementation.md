@@ -69,7 +69,7 @@ fn this_is_fine() {
 
 This does not seem right...
 
-The cell content is set to the reference to `newval`, even though it should only hold references
+The cell content was set to the reference to `newval`, even though it should only hold references
 with `static` lifetime... Even worse, the reference can still be used after its referenced value
 is freed!
 
@@ -84,11 +84,12 @@ running 1 test
 test tests::this_is_fine ... ok
 ```
 
-Wow, this does not even fail! What the Zig is going on?
+Wow, this does not even fail! What the decoherence is going on?
 
 Well, when looking at the comments in the test, we see that we got us a neat use-after-free bug.
 I still remember getting PTSD from those when I was still coding C - the memory is freed, but the
 content is still there! We read it, even though we should not be able to, and the test succeeds.
+But on other occasions, the memory content might have changed.
 
 Let's try to verify this by running `cargo test --release`:
 ```
@@ -107,8 +108,6 @@ assertion `left == right` failed
 A-ha! So the implementation of `MyCell` really is broken. The borrow checker left us stranded in
 the desert, letting us compile this junk. But why?
 
-Maybe we should not have used that `#[allow]` statement after all...
-
 
 ### Covariance
 
@@ -125,8 +124,9 @@ place where only a "less useful" lifetime (covering a smaller region) is require
 reason why
 > `'static` is always subtype of any `'a`.
 
-But with `MyCell<T>` being covariant over `T`, this means that when a `MyCell<'a>` is required, we
-can also use a `MyCell<'static>`. Furthermore, immutable references are also covariant. So when a
+Covariance is assumed (see rustonomicon table above), because `T` is owned by `MyCell`. But with
+`MyCell<T>` being covariant over `T`, this means that when a `MyCell<'a>` is required, we can also
+use a `MyCell<'static>`. Furthermore, immutable references are also covariant. So when a
 `&MyCell<'a>` is required, a `&MyCell<'static>` will do.
 
 Let's look again at the signature of `set()`:
@@ -135,11 +135,12 @@ pub fn set(&self, value: T)
 ```
 
 When T is `'a`, then `&self` has to be `&MyCell<'a>`. But as we learned, Rust is also fine with
-`&MyCell<'static>` in its place, as it thinks it is "more useful".
+`&MyCell<'static>` in its place, as it thinks it is "more useful". So this is why assigning a
+lifetime `'a` to `MyCell<'static>` works!
 
 Note that *mutable references* are **not covariant**, but **invariant** over `T`. So when using
 `&mut self` instead, the above does not apply. As the "covariance-chain" is interrupted, the
-compiler won't accept another `MyCell` and reject the above code:
+compiler won't accept `MyCell<'a>` and reject the above code:
 ```
 38 |             cell.set(&newval);
    |                      ^^^^^^^ borrowed value does not live long enough
@@ -161,7 +162,7 @@ we can see that we can use one of:
 
 Both make our struct invariant over `T`, the main difference is if the struct should be
 [Send and Sync](https://doc.rust-lang.org/nomicon/send-and-sync.html) or not. As we want to tackle
-the problem at hand, not agonize over multithreading, so we will pick `PhantomData<*mut T>`.
+the problem at hand and not agonize over multithreading, we will pick `PhantomData<*mut T>`.
 
 ```rust
 pub struct MyCell<T> {
@@ -205,11 +206,11 @@ Right...?
 
 
 
-# Reason #2: UB
+# Reason #2: Nasal demons
 
-Nope.
+[Nope](https://en.wikipedia.org/wiki/Nasal_demons).
 
-There is a nasty thing called **Undefined Behavior**, on which I will probably do an extra blog
+There is a nasty thing called **Undefined Behavior**, about which I will probably do an extra blog
 post in the future. But here is a short explanation, despite my C PTSD coming back again...
 
 ### A quick overview
@@ -217,17 +218,20 @@ post in the future. But here is a short explanation, despite my C PTSD coming ba
 There is a contract between you and the compiler. You are only allowed to do certain things, and
 so does the compiler. If you do a mistake, the compiler is obliged to complain and not compile the
 program. But when you do stuff that is considered **UB** by the standard, the compiler is not
-obliged to do anything. It can do what it wants! It might nag at you, or just compile the program.
-But not your program necessarily. It might instead format your hard drive.
+obliged to do anything. It can do what it wants! It might nag at you, or just compile the program,
+but change the actual commands that are executed. Like formatting your hard drive.
 
-Usually it doesn't. The compiler creators are on your side (and they use their tool themselves), so
-they won't put harmful behavior in there. But your **UB** infested program might just do something
-that is not described by the source code. Or maybe it will at first, but will do something 
-different after a compiler update. Considering this behavior, you see that it is actually very
-troublesome to detect **UB**, because your programming compiling and working like it should does
-not necessarily mean that your code is sound.
+Well, usually it doesn't. The compiler creators are on your side (and they use their tool
+themselves), so they won't put harmful behavior in there. But your **UB** infested program might
+just do something that is not described by the source code. Or maybe it will at first, but will do
+something different after a compiler update. Considering this behavior, you see that it is actually
+very troublesome to detect **UB**, because your programming compiling and working like it should
+does not necessarily mean that your code is sound.
 
 ### UB in our implementation
+
+Luckily, you can't run into **UB** when sticking to *safe rust*, but as we use unsafe blocks, we
+have to take extra care.
 
 Looking at Rust's [list of things considered UB](https://doc.rust-lang.org/reference/behavior-considered-undefined.html),
 we can identify one problem: The mutation of bytes pointed to by a shared (i.e. immutable)
@@ -237,8 +241,15 @@ reference. The only exception allowed is inside an
 This means that the compiler implicitly "knows" that data inside an (immutably referenced)
 `UnsafeCell` might be mutated, while this is not the case with our implementation.
 
-To check if this is really the case, we can use the very neat tool
-[Miri](https://github.com/rust-lang/miri).
+Actually the compiler would have detected the **UB** and would have complained, and even proposed
+to use an [unsafe cell](https://doc.rust-lang.org/std/cell/struct.UnsafeCell.html). But for the
+sake of example, we used the `#[allow]` statement to disable the error, to be able to tinker around
+with the unsound implementation. If we remove it, our code won't compile. Nice!
+
+# Miri to the rescue
+
+There might be other cases that are not as obvious as the one shown here. To detect several
+different forms of **UB**, we can use the very neat tool [Miri](https://github.com/rust-lang/miri).
 
 First let's delete the previous test and add a new one:
 ```rust
@@ -267,4 +278,5 @@ running 1 test
 test tests::this_is_also_fine ... error: Undefined Behavior: attempting a write access using <178867> at alloc62087[0x0], but that tag only grants SharedReadOnly permission for this location
 ```
 
-So even with the fix, our implementation is still unsound.
+So even with the fix, our implementation is still unsound. But at least now we know why and how
+to detect these kind of errors.
