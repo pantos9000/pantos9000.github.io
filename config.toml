@@ -6,7 +6,7 @@ base_url = "https://pantos9000.github.io"
 
 # The site title and description; used in feeds by default.
 title = "Pantos' Periphrases"
-description = "A memory aid for me and everybody who is interested"
+description = "Ideas that use an unnecessarily large number of words to express"
 
 # The default language; used in feeds.
 default_language = "en"
