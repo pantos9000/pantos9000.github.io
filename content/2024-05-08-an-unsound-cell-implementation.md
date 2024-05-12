@@ -1,16 +1,20 @@
 +++
 title = "An unsound cell implementation"
-date = 2024-06-08
+date = 2024-05-08
+toc = true
 
 [taxonomies]
 tags = ["rust", "subtyping", "variance", "ub"]
+
+[extra]
+toc = true
 +++
 
-I recently came across a [RustFest 2016 talk](https://www.youtube.com/watch?v=fI4RG_uq-WU&t=1554s)
+# Introduction
+
+I recently came across [this RustFest 2016 talk](https://www.youtube.com/watch?v=fI4RG_uq-WU&t=1554s)
 giving an example of a manual [cell](https://doc.rust-lang.org/std/cell/) implementation that is
 inherently unsound.
-
-# An unsound implementation of `Cell`
 
 Let's look at this short example:
 
@@ -45,7 +49,7 @@ overwrite the value inside an `unsafe` block.
 
 This is unsound for two reasons.
 
-# Reason #1: Stranded in the subtyping desert
+# Reason #1: Subtyping? What subtyping?
 
 Consider the following test:
 
@@ -155,7 +159,7 @@ compiler won't accept `MyCell<'a>` and reject the above code:
 So how can we fix this, without requiring a mutable `self`?
 
 
-## `PhantomData` to the rescue
+## PhantomData to the rescue
 
 With [PhantomData](https://doc.rust-lang.org/std/marker/struct.PhantomData.html), we can have an
 additional member in `MyCell`, that prevents the struct from being covariant over `T`. This won't

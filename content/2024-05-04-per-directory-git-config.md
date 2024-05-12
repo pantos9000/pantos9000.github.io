@@ -1,21 +1,22 @@
 +++
-title = "Per-directory config of git user settings and ssh authentication"
+title = "Per-directory git config"
 date = 2024-05-04
 
 [taxonomies]
 tags = ["git", "ssh"]
+
+[extra]
+toc = true
 +++
 
 # Multiple SSH keys
 
-To generate a new key for a new account or service:
+To generate a new key for each account or service:
 
 ```bash
 ssh-keygen -t ed25519 -C "foo@blarb.org" -f "~/.ssh/foo"
 ssh-keygen -t ed25519 -C "bar@blubb.org" -f "~/.ssh/bar"
 ```
-
-# Different SSH keys for different services
 
 If the keys are used for accounts in different services like *github* or *bitbucket*, we can
 have each service use a different ssh config.
@@ -39,7 +40,7 @@ work for different accounts on the **same** service.
 
 This can be tackled in a different way though, but let's first have alook at...
 
-# Multiple git identities, depending on parent directory
+# Multiple git identities
 
 Let's assume we have different git identities (i.e. name/email) for each of the services, and we
 want git to automatically choose the right one.
@@ -80,7 +81,7 @@ With this, git will pick the an identity, depending on the parent directory that
 in. This will not be system-wide, so if we want to add new identities, we will have to create
 additional parent dirs and add new `includeIf` entries.
 
-# Different SSH keys for the same service, depending on parent directory
+# Different SSH keys depending on parent directory
 
 Instead of using the SSH config file, we can use the different git config files in the respective
 parent directories to pick the right SSH key.
