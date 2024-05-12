@@ -13,6 +13,7 @@ inherently unsound.
 # An unsound implementation of `Cell`
 
 Let's look at this short example:
+
 ```rust
 pub struct MyCell<T> {
     value: T,
@@ -47,6 +48,7 @@ This is unsound for two reasons.
 # Reason #1: Stranded in the subtyping desert
 
 Consider the following test:
+
 ```rust
 #[test]
 fn this_is_fine() {
@@ -76,10 +78,11 @@ is freed!
 So this test should fail hard, right? Well, let's try to...
 
 
-### Execute the test
+## Execute the test
 
 We run it with `cargo test`:
-```
+
+```text
 running 1 test
 test tests::this_is_fine ... ok
 ```
@@ -92,7 +95,8 @@ content is still there! We read it, even though we should not be able to, and th
 But on other occasions, the memory content might have changed.
 
 Let's try to verify this by running `cargo test --release`:
-```
+
+```text
 running 1 test
 test tests::this_is_fine ... FAILED
 
@@ -109,7 +113,7 @@ A-ha! So the implementation of `MyCell` really is broken. The borrow checker lef
 the desert, letting us compile this junk. But why?
 
 
-### Covariance
+## Covariance
 
 The reason why assigning a *non-static* reference to a `MyCell` holding a *static* reference is
 possible because `MyCell<T>` is *covariant* over `T`.
@@ -130,6 +134,7 @@ use a `MyCell<'static>`. Furthermore, immutable references are also covariant. S
 `&MyCell<'a>` is required, a `&MyCell<'static>` will do.
 
 Let's look again at the signature of `set()`:
+
 ```rust
 pub fn set(&self, value: T)
 ```
@@ -141,7 +146,8 @@ lifetime `'a` to `MyCell<'static>` works!
 Note that *mutable references* are **not covariant**, but **invariant** over `T`. So when using
 `&mut self` instead, the above does not apply. As the "covariance-chain" is interrupted, the
 compiler won't accept `MyCell<'a>` and reject the above code:
-```
+
+```text
 38 |             cell.set(&newval);
    |                      ^^^^^^^ borrowed value does not live long enough
 ```
@@ -149,7 +155,7 @@ compiler won't accept `MyCell<'a>` and reject the above code:
 So how can we fix this, without requiring a mutable `self`?
 
 
-### `PhantomData` to the rescue
+## `PhantomData` to the rescue
 
 With [PhantomData](https://doc.rust-lang.org/std/marker/struct.PhantomData.html), we can have an
 additional member in `MyCell`, that prevents the struct from being covariant over `T`. This won't
@@ -157,6 +163,7 @@ add any more actual data to our struct, but will change the way the compiler tre
 
 When we check the table [in the rustonomicon](https://doc.rust-lang.org/nomicon/phantom-data.html),
 we can see that we can use one of:
+
 * `PhantomData<*mut T>`
 * `PhantomData<fn(T) -> T>`
 
@@ -195,7 +202,8 @@ impl<T: Copy> MyCell<T> {
 
 Now this looks promising! When running `cargo test`, the compiler will refuse the test and give
 us the same error as before:
-```
+
+```text
 43 |             cell.set(&newval);
    |                      ^^^^^^^ borrowed value does not live long enough
 ```
@@ -213,7 +221,7 @@ Right...?
 There is a nasty thing called **Undefined Behavior**, about which I will probably do an extra blog
 post in the future. But here is a short explanation, despite my C PTSD coming back again...
 
-### A quick overview
+## A quick overview
 
 There is a contract between you and the compiler. You are only allowed to do certain things, and
 so does the compiler. If you do a mistake, the compiler is obliged to complain and not compile the
@@ -228,7 +236,7 @@ something different after a compiler update. Considering this behavior, you see 
 very troublesome to detect **UB**, because your programming compiling and working like it should
 does not necessarily mean that your code is sound.
 
-### UB in our implementation
+## UB in our implementation
 
 Luckily, you can't run into **UB** when sticking to *safe rust*, but as we use unsafe blocks, we
 have to take extra care.
@@ -252,6 +260,7 @@ There might be other cases that are not as obvious as the one shown here. To det
 different forms of **UB**, we can use the very neat tool [Miri](https://github.com/rust-lang/miri).
 
 First let's delete the previous test and add a new one:
+
 ```rust
     #[test]
     fn this_is_even_finer() {
@@ -263,19 +272,23 @@ First let's delete the previous test and add a new one:
 ```
 
 Install Miri with
+
 ```bash
 rustup +nightly component add miri
 ```
 
 Run Miri with
+
 ```bash
 cargo +nightly miri test
 ```
 
 This gives us the following error:
-```
+
+```text
 running 1 test
-test tests::this_is_also_fine ... error: Undefined Behavior: attempting a write access using <178867> at alloc62087[0x0], but that tag only grants SharedReadOnly permission for this location
+test tests::this_is_also_fine ... error: Undefined Behavior: attempting a write access using
+<178867> at alloc62087[0x0], but that tag only grants SharedReadOnly permission for this location
 ```
 
 So even with the fix, our implementation is still unsound. But at least now we know why and how

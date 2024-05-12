@@ -9,6 +9,7 @@ tags = ["git", "ssh"]
 # Multiple SSH keys
 
 To generate a new key for a new account or service:
+
 ```bash
 ssh-keygen -t ed25519 -C "foo@blarb.org" -f "~/.ssh/foo"
 ssh-keygen -t ed25519 -C "bar@blubb.org" -f "~/.ssh/bar"
@@ -20,6 +21,7 @@ If the keys are used for accounts in different services like *github* or *bitbuc
 have each service use a different ssh config.
 
 Add to `~/.ssh/config`:
+
 ```bash
 Host github.com
     Hostname github.com
@@ -43,12 +45,14 @@ Let's assume we have different git identities (i.e. name/email) for each of the 
 want git to automatically choose the right one.
 
 * Create two parent directories that each contains our repos for the according service, e.g.:
+
   ```bash
   mkdir ~/github
   mkdir ~/bitbucket
   ```
 
 * Add to `~/.gitconfig`:
+
   ```bash
   [includeIf "gitdir:~/github"]
       path = ~/github/.gitconfig
@@ -57,6 +61,7 @@ want git to automatically choose the right one.
   ```
 
 * Create `~/github/.gitconfig`:
+
   ```bash
   [user]
       email = foo@blarb.org
@@ -64,6 +69,7 @@ want git to automatically choose the right one.
   ```
 
 * Create `~/bitbucket/.gitconfig`:
+
   ```bash
   [user]
       email = bar@blubb.org
@@ -80,12 +86,14 @@ Instead of using the SSH config file, we can use the different git config files 
 parent directories to pick the right SSH key.
 
 * Add to `~/github/.gitconfig`:
+
   ```bash
   [core]
       sshCommand = ssh -i ~/.ssh/foo
   ```
 
 * Add to `~/bitbucket/.gitconfig`:
+
   ```bash
   [core]
       sshCommand = ssh -i ~/.ssh/bar
