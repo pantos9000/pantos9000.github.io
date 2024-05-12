@@ -226,7 +226,7 @@ js_switcher_default = "dark" # default nojs switcher mode: dark, light (make sur
 search_library = 'elasticlunr'
 stylesheets = ["abridge.css"]
 
-webmanifest = "manifest.min.json" # Required for PWAs
+webmanifest = "favicon/manifest.json" # Required for PWAs
 
 ###############################################################################
 ### PWA (Progressive Web Application)
@@ -266,12 +266,12 @@ pwa_BASE_CACHE_FILES = "'/js/theme.min.js','/js/theme_light.min.js','/abridge.cs
 
 favicon_theme_color = "#333333"
 favicon_ms_color = "#333333"
-favicon_mask = "safari-pinned-tab.svg" # safari-pinned-tab.svg
-favicon_mask_color = "#ff9900"
-favicon_svg = "favicon.svg" # favicon.svg
-favicon180 = "apple-touch-icon.png" # apple-touch-icon.png
-favicon32 = "favicon-32x32.png" # favicon-32x32.png
-favicon16 = "favicon-16x16.png" # favicon-16x16.png
+favicon_mask = "favicon/safari-pinned-tab.svg"
+favicon_mask_color = "#5bbad5"
+# favicon_svg = "favicon/favicon.svg"
+favicon180 = "favicon/apple-touch-icon.png"
+favicon32 = "favicon/favicon-32x32.png"
+favicon16 = "favicon/favicon-16x16.png"
 
 
 ###############################################################################
