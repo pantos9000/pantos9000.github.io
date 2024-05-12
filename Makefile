@@ -14,3 +14,8 @@ build:
 serve:
 	@echo ==== MAKE SERVE ====
 	zola serve
+
+.PHONY: mdl
+mdl:
+	@echo === MAKE mdl ====
+	mdl -s markdownlint.rb $(shell find -iname "*.md" -not -path "./themes/*")
