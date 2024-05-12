@@ -1,6 +1,8 @@
 +++
 title = "About this blog"
 path = "about"
+template = "pages.html"
+draft = false
 +++
 
 # Purpose of this blog
