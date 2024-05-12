@@ -3,9 +3,12 @@
 [My own cute little tech blog](https://pantos9000.github.io) made with
 [Zola](https://github.com/getzola/zola).
 
-### Serve locally
+## `make` targets
 
-Start a local webserver with
+Check the `Makefile` for available targets.
+
+E.g. to serve with zola:
+
 ```bash
-zola serve
+make serve
 ```
