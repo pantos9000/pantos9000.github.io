@@ -19,7 +19,7 @@ inherently unsound.
 Let's look at this short example:
 
 ```rust
-pub struct MyCell<T> {
+pub struct MyCell<T: Copy> {
     value: T,
 }
 
@@ -297,3 +297,102 @@ test tests::this_is_also_fine ... error: Undefined Behavior: attempting a write 
 
 So even with the fix, our implementation is still unsound. But at least now we know why and how
 to detect these kind of errors.
+
+# A final try
+
+Apart from the possibility of using `UnsafeCell` and just going down the path of the stdlib, we
+have another option: We can store a raw pointer to the data and use it for access.
+
+```rust
+pub struct MyCell<T: Copy> {
+    value: *mut T,
+}
+
+impl<T: Copy> Drop for MyCell<T> {
+    fn drop(&mut self) {
+        // SAFETY: is created from a Box in constructor
+        let value = unsafe { Box::from_raw(self.value) };
+        drop(value);
+    }
+}
+
+impl<T: Copy> MyCell<T> {
+    pub fn new(value: T) -> Self {
+        let value = Box::new(value);
+        let value = Box::into_raw(value);
+        Self { value }
+    }
+
+    pub fn get(&self) -> T {
+        // SAFETY:
+        // * value is created in constructor and freed in drop, has to be valid
+        // * value is created from a Box, so has to be aligned and properly initialized
+        unsafe { std::ptr::read(self.value) }
+    }
+
+    pub fn set(&self, value: T) {
+        use std::ptr;
+        unsafe {
+            ptr::write(self.value, value);
+        }
+    }
+}
+```
+
+When running the above test with Miri, it does not find any UB. And when trying to compile the
+dangling pointer test, it actually does not compile, nice!
+
+But this has a big drawback: Instead of having the data on the stack, it is now stored on the heap.
+Not only does this mean we always have to do an additional indirection and follow a pointer, it can
+also be quite bad for cache efficiency.
+
+## Variance yet again
+
+As a sidenote, we could also use a `*const` instead of a `*mut` to store `value`. Casting a
+`*const` raw pointer to a `*mut` and writing to it is actually not considered UB, as there is no
+*immutable reference* (i.e. `&T`) pointing to the data while it is mutated.
+
+But with `*const`, the unsound test from above would compile again. You guessed it - because
+`*const` is covariant over `T`. We can fix it the same way again, by adding `PhantomData`:
+
+```rust
+pub struct MyCell<T: Copy> {
+    value: *const T,
+    _phantom: std::marker::PhantomData<*mut T>,
+}
+
+impl<T: Copy> Drop for MyCell<T> {
+    fn drop(&mut self) {
+        // SAFETY: is created from a Box in constructor
+        let value = unsafe { Box::from_raw(self.value.cast_mut()) };
+        drop(value);
+    }
+}
+
+impl<T: Copy> MyCell<T> {
+    pub fn new(value: T) -> Self {
+        let value = Box::new(value);
+        let value = Box::into_raw(value);
+        Self {
+            value,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn get(&self) -> T {
+        // SAFETY:
+        // * value is created in constructor and freed in drop, has to be valid
+        // * value is created from a Box, so has to be aligned and properly initialized
+        unsafe { std::ptr::read(self.value) }
+    }
+
+    pub fn set(&self, value: T) {
+        use std::ptr;
+        unsafe {
+            ptr::write(self.value.cast_mut(), value);
+        }
+    }
+}
+```
+
+But as using `*mut` achieves the same, there is no real reason using `*const` with `Phantomdata`.
