@@ -19,7 +19,7 @@ inherently unsound.
 Let's look at this short example:
 
 ```rust
-pub struct MyCell<T> {
+pub struct MyCell<T: Copy> {
     value: T,
 }
 
