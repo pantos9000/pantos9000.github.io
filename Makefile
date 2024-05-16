@@ -19,3 +19,8 @@ serve:
 mdl:
 	@echo === MAKE mdl ====
 	mdl -s markdownlint.rb $(shell find -iname "*.md" -not -path "./themes/*")
+
+.PHONY: ubuntu-install-dependencies
+ubuntu-install-dependencies:
+	@echo ==== MAKE ubuntu-install-dependencies ====
+	sudo apt-get install -y markdownlint

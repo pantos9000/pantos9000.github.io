@@ -1,0 +1,20 @@
+name: Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: make ubuntu-install-dependencies
+
+      - name: Markdown lint
+        run: make mdl
