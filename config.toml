@@ -51,6 +51,11 @@ render_emoji = true
 smart_punctuation = false # `...` to `…`, `"quote"` to `“curly”` etc
 
 
+[link_checker]
+internal_level = "error"
+external_level = "error"
+
+
 [slugify]
 # Whether to remove date prefixes for page path slugs.
 # For example, content/posts/2016-10-08_a-post-with-dates.md => posts/a-post-with-dates
