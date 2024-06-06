@@ -10,6 +10,11 @@ build:
 	@echo ==== MAKE BUILD ====
 	zola build
 
+.PHONY: check
+check:
+	@echo ==== MAKE CHECK ====
+	zola check
+
 .PHONY: serve
 serve:
 	@echo ==== MAKE SERVE ====
