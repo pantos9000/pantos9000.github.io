@@ -1,7 +1,6 @@
 +++
 title = "An unsound cell implementation"
 date = 2024-05-08
-toc = true
 
 [taxonomies]
 tags = ["rust", "subtyping", "variance", "ub"]
