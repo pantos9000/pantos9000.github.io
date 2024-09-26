@@ -12,7 +12,7 @@ toc = true
 
 # Introduction
 
-I recently came across a
+Recently I read a
 [very interesting article](https://developers.redhat.com/blog/2020/06/02/the-joys-and-perils-of-c-and-c-aliasing-part-1)
 that is discussing problems that can arise with
 [pointer aliasing](https://doc.rust-lang.org/nomicon/aliasing.html).
@@ -129,7 +129,7 @@ unsafe fn set_both_and_return_first(foo: *mut Foo, bar: *mut Bar) -> i32 {
 ```
 
 Furthermore, callers can add a `SAFETY` comment to indicate what they took into account to make
-calling the function safe:
+calling the function sound:
 
 ```rust
     let mut foo = Foo::default();

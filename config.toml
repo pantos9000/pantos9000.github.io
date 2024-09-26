@@ -23,10 +23,10 @@ build_search_index = true
 minify_html = false
 
 # When set to "true", a feed is automatically generated.
-generate_feed = true
+generate_feeds = true
 
 # Use `rss.xml` for RSS feeds and `atom.xml` for ATOM.
-feed_filename = "atom.xml"
+feed_filenames = ["atom.xml"]
 
 # The default author for pages
 author = "Pantos"
@@ -54,6 +54,11 @@ smart_punctuation = false # `...` to `…`, `"quote"` to `“curly”` etc
 [link_checker]
 internal_level = "error"
 external_level = "error"
+
+# skip anchor checking for github links, zola does not seem to detect those
+skip_anchor_prefixes = [
+    "https://github.com/",
+]
 
 
 [slugify]
