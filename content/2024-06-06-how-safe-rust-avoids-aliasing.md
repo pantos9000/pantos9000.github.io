@@ -1,7 +1,6 @@
 +++
 title = "How safe rust avoids pointer aliasing"
 date = 2024-06-06
-toc = true
 
 [taxonomies]
 tags = ["rust", "unsafe", "aliasing", "ub"]
