@@ -55,6 +55,11 @@ smart_punctuation = false # `...` to `…`, `"quote"` to `“curly”` etc
 internal_level = "error"
 external_level = "error"
 
+# skip anchor checking for github links, zola does not seem to detect those
+skip_anchor_prefixes = [
+    "https://github.com/",
+]
+
 
 [slugify]
 # Whether to remove date prefixes for page path slugs.
