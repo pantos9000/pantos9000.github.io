@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://pantos9000.github.io/js/theme.min.js" integrity="sha384-pb++s6uBRKaQv+iAXpgA/H3IlpLZdO14tTwuCI7uXmz4aaZdByoCcM+6BhynMq/1"></script>
+  <link rel="stylesheet" href="https://pantos9000.github.io/abridge.css?h=fd19da75e81a79102afd" />
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="base" content="https://pantos9000.github.io" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#333333" />
+  <meta name="msapplication-TileColor" content="#333333" />
+  <link rel="manifest" href="https://pantos9000.github.io/favicon/manifest.json" />
+  <link rel="mask-icon" href="https://pantos9000.github.io/favicon/safari-pinned-tab.svg" color="#5bbad5" />
+  <link rel="apple-touch-icon" sizes="180x180" href="https://pantos9000.github.io/favicon/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="https://pantos9000.github.io/favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="https://pantos9000.github.io/favicon/favicon-16x16.png" />
+  <meta name="robots" content="index, follow" />
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <title>Per-directory git config | Pantos' Periphrases</title>
+  <meta name="author" content="Pantos" />
+  <meta name="copyright" content="Pantos&#x27; Periphrases" />
+  <meta name="description" content="Ideas that use an unnecessarily large number of words to express" />
+  <link rel="canonical" href="https://pantos9000.github.io/per-directory-git-config/" />
+  <meta name="keywords" content="rust, linux" />
+  <script defer src="https://pantos9000.github.io/js/abridge.min.js?h=f0dd8dfd4cea819cfbc9" integrity="sha384-Zxtl536qNH4+tuZDSSLJWOtMLL/T5AxeD+unOQyqtvZD9RYA/CYxDZrYYC0vGIg+"></script>
+  <noscript><link rel="stylesheet" href="https://pantos9000.github.io/nojs.css" /></noscript>
+</head>
+<body>
+  <header>
+    <nav>
+      <div><big><a href="https://pantos9000.github.io" title="Pantos&#x27; Periphrases"><font color="#09f">P</font>antos` <font color="#09f">P</font>eriphrases</a></big></div>
+      <div>
+
+        <div>
+          <ul><li><a class="s110" href="https://pantos9000.github.io/archive/"> Posts </a></li><li><a class="s110" href="https://pantos9000.github.io/tags/"> Tags </a></li><li><a class="s110" href="https://pantos9000.github.io/about/"> About </a></li><li><i type="reset" id="mode" class="js svgs adjust"></i></ul>
+        </div>
+
+        <div>
+          <div>
+            <form autocomplete=off class="js" name="goSearch" id="searchbox">
+              <div class="searchd">
+                <input id="searchinput" type="text" placeholder="Search" title="Search" />
+                <button type="submit" title="Search" class="svgs svgm search"></button>
+              </div>
+              <div class="results"><div id="suggestions"></div></div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </nav>
+    <div class="desc">Ideas that use an unnecessarily large number of words to express</div>
+    <hr />
+  </header>
+  <main>
+    <article>
+      <h1><a href="https://pantos9000.github.io/per-directory-git-config/">Per-directory git config</a></h1>
+
+      <span class="s95"> Pantos <span class="rpad"></span> May 04, 2024 <span class="rpad"></span> #<a href="https://pantos9000.github.io/tags/git/">git</a>  #<a href="https://pantos9000.github.io/tags/ssh/">ssh</a> </span>
+
+    
+
+
+<h1 id="multiple-ssh-keys">Multiple SSH keys</h1>
+<p>To generate a new key for each account or service:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">ssh-keygen</span></span><span class="z-meta z-function-call z-arguments z-shell"><span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>t</span> ed25519<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>C</span> <span class="z-string z-quoted z-double z-shell"><span class="z-punctuation z-definition z-string z-begin z-shell">&quot;</span>foo@blarb.org<span class="z-punctuation z-definition z-string z-end z-shell">&quot;</span></span><span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>f</span> <span class="z-string z-quoted z-double z-shell"><span class="z-punctuation z-definition z-string z-begin z-shell">&quot;</span>~/.ssh/foo<span class="z-punctuation z-definition z-string z-end z-shell">&quot;</span></span></span>
+</span><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">ssh-keygen</span></span><span class="z-meta z-function-call z-arguments z-shell"><span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>t</span> ed25519<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>C</span> <span class="z-string z-quoted z-double z-shell"><span class="z-punctuation z-definition z-string z-begin z-shell">&quot;</span>bar@blubb.org<span class="z-punctuation z-definition z-string z-end z-shell">&quot;</span></span><span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>f</span> <span class="z-string z-quoted z-double z-shell"><span class="z-punctuation z-definition z-string z-begin z-shell">&quot;</span>~/.ssh/bar<span class="z-punctuation z-definition z-string z-end z-shell">&quot;</span></span></span>
+</span></code></pre>
+<p>If the keys are used for accounts in different services like <em>github</em> or <em>bitbucket</em>, we can
+have each service use a different ssh config.</p>
+<p>Add to <code>~/.ssh/config</code>:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">Host</span></span><span class="z-meta z-function-call z-arguments z-shell"> github.com</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">Hostname</span></span><span class="z-meta z-function-call z-arguments z-shell"> github.com</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">IdentityFile</span></span><span class="z-meta z-function-call z-arguments z-shell"> <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/.ssh/foo</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">IdentitiesOnly</span></span><span class="z-meta z-function-call z-arguments z-shell"> yes</span>
+</span><span class="z-source z-shell z-bash">
+</span><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">Host</span></span><span class="z-meta z-function-call z-arguments z-shell"> bitbucket.org</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">Hostname</span></span><span class="z-meta z-function-call z-arguments z-shell"> bitbucket.org</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">IdentityFile</span></span><span class="z-meta z-function-call z-arguments z-shell"> <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/.ssh/bar</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">IdentitiesOnly</span></span><span class="z-meta z-function-call z-arguments z-shell"> yes</span>
+</span></code></pre>
+<p>Then each service will have a certain SSH key assigned, system-wide. So far so good, but this won't
+work for different accounts on the <strong>same</strong> service.</p>
+<p>This can be tackled in a different way though, but let's first have alook at...</p>
+<h1 id="multiple-git-identities">Multiple git identities</h1>
+<p>Let's assume we have different git identities (i.e. name/email) for each of the services, and we
+want git to automatically choose the right one.</p>
+<ul>
+<li>
+<p>Create two parent directories that each contains our repos for the according service, e.g.:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">mkdir</span></span><span class="z-meta z-function-call z-arguments z-shell"> <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/github</span>
+</span><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">mkdir</span></span><span class="z-meta z-function-call z-arguments z-shell"> <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/bitbucket</span>
+</span></code></pre>
+</li>
+<li>
+<p>Add to <code>~/.gitconfig</code>:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">[includeIf</span></span><span class="z-meta z-function-call z-arguments z-shell"> <span class="z-string z-quoted z-double z-shell"><span class="z-punctuation z-definition z-string z-begin z-shell">&quot;</span>gitdir:~/github<span class="z-punctuation z-definition z-string z-end z-shell">&quot;</span></span>]</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">path</span></span><span class="z-meta z-function-call z-arguments z-shell"> = <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/github/.gitconfig</span>
+</span><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">[includeIf</span></span><span class="z-meta z-function-call z-arguments z-shell"> <span class="z-string z-quoted z-double z-shell"><span class="z-punctuation z-definition z-string z-begin z-shell">&quot;</span>gitdir:~/bitbucket<span class="z-punctuation z-definition z-string z-end z-shell">&quot;</span></span>]</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">path</span></span><span class="z-meta z-function-call z-arguments z-shell"> = <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/bitbucket/.gitconfig</span>
+</span></code></pre>
+</li>
+<li>
+<p>Create <code>~/github/.gitconfig</code>:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">[user]</span></span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">email</span></span><span class="z-meta z-function-call z-arguments z-shell"> = foo@blarb.org</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">name</span></span><span class="z-meta z-function-call z-arguments z-shell"> = Foo</span>
+</span></code></pre>
+</li>
+<li>
+<p>Create <code>~/bitbucket/.gitconfig</code>:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">[user]</span></span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">email</span></span><span class="z-meta z-function-call z-arguments z-shell"> = bar@blubb.org</span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">name</span></span><span class="z-meta z-function-call z-arguments z-shell"> = Bar</span>
+</span></code></pre>
+</li>
+</ul>
+<p>With this, git will pick the an identity, depending on the parent directory that the git repo is
+in. This will not be system-wide, so if we want to add new identities, we will have to create
+additional parent dirs and add new <code>includeIf</code> entries.</p>
+<h1 id="different-ssh-keys-depending-on-parent-directory">Different SSH keys depending on parent directory</h1>
+<p>Instead of using the SSH config file, we can use the different git config files in the respective
+parent directories to pick the right SSH key.</p>
+<ul>
+<li>
+<p>Add to <code>~/github/.gitconfig</code>:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">[core]</span></span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">sshCommand</span></span><span class="z-meta z-function-call z-arguments z-shell"> = ssh<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>i</span> <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/.ssh/foo</span>
+</span></code></pre>
+</li>
+<li>
+<p>Add to <code>~/bitbucket/.gitconfig</code>:</p>
+<pre data-lang="bash" class="language-bash z-code"><code class="language-bash" data-lang="bash"><span class="z-source z-shell z-bash"><span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">[core]</span></span>
+</span><span class="z-source z-shell z-bash">    <span class="z-meta z-function-call z-shell"><span class="z-variable z-function z-shell">sshCommand</span></span><span class="z-meta z-function-call z-arguments z-shell"> = ssh<span class="z-variable z-parameter z-option z-shell"><span class="z-punctuation z-definition z-parameter z-shell"> -</span>i</span> <span class="z-meta z-group z-expansion z-tilde"><span class="z-variable z-language z-tilde z-shell">~</span></span>/.ssh/bar</span>
+</span></code></pre>
+</li>
+</ul>
+<p>This can even be used for different git accounts on the same service. Depending on the parent
+directory, a certain author, email and ssh key will be used.</p>
+
+      <nav>
+        <div>
+          <a href="https://pantos9000.github.io/an-unsound-cell-implementation/">&#8249; An unsound cell implementation</a>
+        </div>
+        <div>
+        </div>
+      </nav>
+    </article>
+
+    <div class="sblock">
+      <div class="blockdiv sticky">
+        <a class="b s150" href="#">Index</a>
+        <div>
+          <a href="#multiple-ssh-keys">Multiple SSH keys</a>
+        </div>
+        <div>
+          <a href="#multiple-git-identities">Multiple git identities</a>
+        </div>
+        <div>
+          <a href="#different-ssh-keys-depending-on-parent-directory">Different SSH keys depending on parent directory</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <hr />
+    <div class="c">
+      <nav class="tpad"><div><a href="https://github.com/pantos9000/" target="_blank" title="Github"><i type="Button" class="svg github" title="Github"></i></a></div></nav>
+      <nav class="vpad">
+        <a class="rpad" href="https://pantos9000.github.io/about/"> About </a>
+        <a class="rpad" href="https://pantos9000.github.io/privacy/"> Privacy </a>
+        <a class="rpad" href="https://pantos9000.github.io/sitemap.xml" target="_blank"> Sitemap </a>
+      </nav>
+      <p class="s90"> &copy; <span id="year">2024</span> Pantos' Periphrases</p>
+      <p class="s90">Powered by <a href="https://www.getzola.org/" target="_blank">Zola</a> & <a href="https://github.com/jieiku/abridge/" target="_blank">Abridge</a></p>
+    </div>
+  </footer>
+</body>
+</html>

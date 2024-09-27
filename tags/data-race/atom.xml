@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>Pantos&#x27; Periphrases - data race</title>
+    <subtitle>Ideas that use an unnecessarily large number of words to express</subtitle>
+    <link rel="self" type="application/atom+xml" href="https://pantos9000.github.io/tags/data-race/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://pantos9000.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2024-09-26T00:00:00+00:00</updated>
+    <id>https://pantos9000.github.io/tags/data-race/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Data Races vs Race Conditions</title>
+        <published>2024-09-26T00:00:00+00:00</published>
+        <updated>2024-09-26T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Pantos
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://pantos9000.github.io/data-races-vs-race-conditions/"/>
+        <id>https://pantos9000.github.io/data-races-vs-race-conditions/</id>
+        
+        <content type="html" xml:base="https://pantos9000.github.io/data-races-vs-race-conditions/">&lt;p&gt;I once had an &amp;quot;aha&amp;quot;-moment when realizing the difference between the different terms. I thought it
+might be a good idea to write it down for reference.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;definitions&quot;&gt;Definitions&lt;&#x2F;h1&gt;
+&lt;p&gt;A &lt;strong&gt;data race&lt;&#x2F;strong&gt; occurs when two or more different threads access the same memory location, where at
+least one of them is doing a write.&lt;&#x2F;p&gt;
+&lt;p&gt;On the other hand, a &lt;strong&gt;race condition&lt;&#x2F;strong&gt; occurs when the observable outcome of a program is
+depending on the timing of how the threads are scheduled.&lt;&#x2F;p&gt;
+&lt;p&gt;These definitions clearly look different, but it really made &lt;em&gt;click&lt;&#x2F;em&gt; in my head only after I looked
+at a few examples.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;a-first-example&quot;&gt;A first example&lt;&#x2F;h1&gt;
+&lt;p&gt;The following example is written in pseudocode.&lt;&#x2F;p&gt;
+&lt;p&gt;Consider two threads accessing the same variable &lt;code&gt;x&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;C&quot; class=&quot;language-C z-code&quot;&gt;&lt;code class=&quot;language-C&quot; data-lang=&quot;C&quot;&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 0
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;1&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; ...
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 1
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;2&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Depending on which thread is executed last, by the end of the program the variable &lt;code&gt;x&lt;&#x2F;code&gt; will be set
+to either &lt;code&gt;1&lt;&#x2F;code&gt; or &lt;code&gt;2&lt;&#x2F;code&gt;, so we have a &lt;strong&gt;race condition&lt;&#x2F;strong&gt;. But both threads might also write to the
+memory at the same time, which is a &lt;strong&gt;data race&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Usually you would not notice such a thing (like on &lt;em&gt;X86_64&lt;&#x2F;em&gt;), but imagine a software architecture
+that does not atomically set the word, but might set the different bits in an arbitrary fashion.
+Then one thread might set one bit, while the other sets another bit. We might end up with &lt;code&gt;0&lt;&#x2F;code&gt; or
+even &lt;code&gt;3&lt;&#x2F;code&gt; as a result. This is one of the reasons why data races are considered
+&lt;strong&gt;undefined behavior&lt;&#x2F;strong&gt; by several languages such as &lt;code&gt;C&lt;&#x2F;code&gt;, &lt;code&gt;C++&lt;&#x2F;code&gt; and &lt;code&gt;Rust&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;a-fix-for-the-data-race&quot;&gt;A fix for the Data Race&lt;&#x2F;h1&gt;
+&lt;p&gt;A common thing to do when confronted with a multithreading problem is to throw mutexes at it. Let&#x27;s
+try this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;C&quot; class=&quot;language-C z-code&quot;&gt;&lt;code class=&quot;language-C&quot; data-lang=&quot;C&quot;&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 0
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;lock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;1&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;unlock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; ...
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 1
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;lock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;2&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;unlock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;We can easily see now that &lt;code&gt;x&lt;&#x2F;code&gt; can only be written to by one thread at a time, so we can&#x27;t get a
+&lt;strong&gt;data race&lt;&#x2F;strong&gt; anymore. But we still have the &lt;strong&gt;race condition&lt;&#x2F;strong&gt;, as the value of the variable still
+depends on which thread locks the mutex first.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;a-workaround-for-the-race-condition&quot;&gt;A workaround for the race condition&lt;&#x2F;h1&gt;
+&lt;p&gt;Now there are different ways to fix race conditions, but in this very simple example, we can do
+workarounds as ugly as we want, so here we go:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;C&quot; class=&quot;language-C z-code&quot;&gt;&lt;code class=&quot;language-C&quot; data-lang=&quot;C&quot;&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 0
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;1&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; ...
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 1
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;1&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Now both threads set &lt;code&gt;x&lt;&#x2F;code&gt; to the same value. This has the effect that it does not matter which
+thread comes first and which comes last, the variable will in the end always be &lt;code&gt;1&lt;&#x2F;code&gt;. So we don&#x27;t
+have a &lt;strong&gt;race condition&lt;&#x2F;strong&gt; anymore.&lt;&#x2F;p&gt;
+&lt;p&gt;But note that we again have a &lt;strong&gt;data race&lt;&#x2F;strong&gt;, as it does not matter which value is written.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;combining-both&quot;&gt;Combining both&lt;&#x2F;h1&gt;
+&lt;p&gt;You probably already guessed it by now - we can avoid both problems by combining both fixes:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;C&quot; class=&quot;language-C z-code&quot;&gt;&lt;code class=&quot;language-C&quot; data-lang=&quot;C&quot;&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 0
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;lock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;1&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;unlock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; ...
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;
+&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-begin z-c&quot;&gt;{&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    &lt;span class=&quot;z-comment z-line z-double-slash z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-definition z-comment z-c&quot;&gt;&#x2F;&#x2F;&lt;&#x2F;span&gt; Thread 1
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;lock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    x &lt;span class=&quot;z-keyword z-operator z-assignment z-c&quot;&gt;=&lt;&#x2F;span&gt; &lt;span class=&quot;z-constant z-numeric z-integer z-decimal z-c&quot;&gt;1&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;    mutex&lt;span class=&quot;z-punctuation z-accessor z-c&quot;&gt;.&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-variable z-function z-c&quot;&gt;unlock&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-begin z-c&quot;&gt;(&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-meta z-function-call z-c&quot;&gt;&lt;span class=&quot;z-meta z-group z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-group z-end z-c&quot;&gt;)&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-punctuation z-terminator z-c&quot;&gt;;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;&lt;span class=&quot;z-source z-c&quot;&gt;&lt;span class=&quot;z-meta z-block z-c&quot;&gt;&lt;span class=&quot;z-punctuation z-section z-block z-end z-c&quot;&gt;}&lt;&#x2F;span&gt;&lt;&#x2F;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Of course this is not a real-world example, but it shows very nicely the differences of both
+problems, and what it comes down to if you want to avoid them.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;sidenote-rust&quot;&gt;Sidenote: Rust&lt;&#x2F;h1&gt;
+&lt;p&gt;Note that in (safe) Rust, you cannot have &lt;strong&gt;data races&lt;&#x2F;strong&gt;, as the borrow checker does not let you borrow
+a mutable reference to &lt;code&gt;x&lt;&#x2F;code&gt; while it is already mutably or immutably borrowed. So both threads are
+not able to borrow the variable at the same time. You &lt;em&gt;must&lt;&#x2F;em&gt; either wrap it in a mutex or solve the issue
+differently, e.g. by using atomic data types.&lt;&#x2F;p&gt;
+&lt;p&gt;But just because you don&#x27;t run into &lt;strong&gt;data races&lt;&#x2F;strong&gt; anymore does not mean that you can&#x27;t have
+&lt;strong&gt;race conditions&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

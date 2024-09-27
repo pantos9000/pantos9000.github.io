@@ -1,0 +1,5 @@
+
+Sitemap: https://pantos9000.github.io/sitemap.xml
+User-Agent: *
+Allow: /
+Host: https://pantos9000.github.io
