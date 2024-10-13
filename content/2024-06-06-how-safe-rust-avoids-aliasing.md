@@ -176,7 +176,7 @@ Usually, you would use safe rust for a function like this:
 ```rust
 fn set_both_and_return_first(foo: &mut Foo, bar: &mut Bar) -> i32 {
     foo.foo = 42;
-    foo.bar = 43;
+    bar.bar = 43;
     foo.foo
 }
 ```
