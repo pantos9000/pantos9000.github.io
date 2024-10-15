@@ -1,0 +1,251 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://pantos9000.github.io/js/theme.min.js" integrity="sha384-pb++s6uBRKaQv+iAXpgA/H3IlpLZdO14tTwuCI7uXmz4aaZdByoCcM+6BhynMq/1"></script>
+  <link rel="stylesheet" href="https://pantos9000.github.io/abridge.css?h=fd19da75e81a79102afd" />
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="base" content="https://pantos9000.github.io" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#333333" />
+  <meta name="msapplication-TileColor" content="#333333" />
+  <link rel="manifest" href="https://pantos9000.github.io/favicon/manifest.json" />
+  <link rel="mask-icon" href="https://pantos9000.github.io/favicon/safari-pinned-tab.svg" color="#5bbad5" />
+  <link rel="apple-touch-icon" sizes="180x180" href="https://pantos9000.github.io/favicon/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="https://pantos9000.github.io/favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="https://pantos9000.github.io/favicon/favicon-16x16.png" />
+  <meta name="robots" content="index, follow" />
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <title>How safe rust avoids pointer aliasing | Pantos' Periphrases</title>
+  <meta name="author" content="Pantos" />
+  <meta name="copyright" content="Pantos&#x27; Periphrases" />
+  <meta name="description" content="Ideas that use an unnecessarily large number of words to express" />
+  <link rel="canonical" href="https://pantos9000.github.io/how-safe-rust-avoids-aliasing/" />
+  <meta name="keywords" content="rust, linux" />
+  <script defer src="https://pantos9000.github.io/js/abridge.min.js?h=f0dd8dfd4cea819cfbc9" integrity="sha384-Zxtl536qNH4+tuZDSSLJWOtMLL/T5AxeD+unOQyqtvZD9RYA/CYxDZrYYC0vGIg+"></script>
+  <noscript><link rel="stylesheet" href="https://pantos9000.github.io/nojs.css" /></noscript>
+</head>
+<body>
+  <header>
+    <nav>
+      <div><big><a href="https://pantos9000.github.io" title="Pantos&#x27; Periphrases"><font color="#09f">P</font>antos` <font color="#09f">P</font>eriphrases</a></big></div>
+      <div>
+
+        <div>
+          <ul><li><a class="s110" href="https://pantos9000.github.io/archive/"> Posts </a></li><li><a class="s110" href="https://pantos9000.github.io/tags/"> Tags </a></li><li><a class="s110" href="https://pantos9000.github.io/about/"> About </a></li><li><i type="reset" id="mode" class="js svgs adjust"></i></ul>
+        </div>
+
+        <div>
+          <div>
+            <form autocomplete=off class="js" name="goSearch" id="searchbox">
+              <div class="searchd">
+                <input id="searchinput" type="text" placeholder="Search" title="Search" />
+                <button type="submit" title="Search" class="svgs svgm search"></button>
+              </div>
+              <div class="results"><div id="suggestions"></div></div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </nav>
+    <div class="desc">Ideas that use an unnecessarily large number of words to express</div>
+    <hr />
+  </header>
+  <main>
+    <article>
+      <h1><a href="https://pantos9000.github.io/how-safe-rust-avoids-aliasing/">How safe rust avoids pointer aliasing</a></h1>
+
+      <span class="s95"> Pantos <span class="rpad"></span> June 06, 2024 <span class="rpad"></span> #<a href="https://pantos9000.github.io/tags/rust/">rust</a>  #<a href="https://pantos9000.github.io/tags/unsafe/">unsafe</a>  #<a href="https://pantos9000.github.io/tags/aliasing/">aliasing</a>  #<a href="https://pantos9000.github.io/tags/ub/">ub</a> </span>
+
+    
+
+
+<h1 id="introduction">Introduction</h1>
+<p>Recently I read a
+<a href="https://developers.redhat.com/blog/2020/06/02/the-joys-and-perils-of-c-and-c-aliasing-part-1">very interesting article</a>
+that is discussing problems that can arise with
+<a href="https://doc.rust-lang.org/nomicon/aliasing.html">pointer aliasing</a>.
+While reading it, I realized that safe Rust is elegantly avoiding these problems inherently.</p>
+<p>Aliasing is basically when two pointers point to the same or parts of the same data or allocation.
+When you have two pointers of the same data type, the compiler does not know if these might point
+to the same data, or if they are completely distinct. This becomes relevant as soon as the compiler
+is trying to do certain optimizations.</p>
+<h1 id="a-simple-example">A simple example</h1>
+<p>Assume we have two similar structs:</p>
+<pre data-lang="rust" class="language-rust z-code"><code class="language-rust" data-lang="rust"><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Foo</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">foo</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">i32</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span><span class="z-source z-rust">
+</span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Bar</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">bar</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">i32</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>As both structs have the exact same memory layout, <code>Foo</code> can also be interpreted as <code>Bar</code>. This
+could be used for a very efficient conversion function:</p>
+<pre data-lang="rust" class="language-rust z-code"><code class="language-rust" data-lang="rust"><span class="z-source z-rust"><span class="z-meta z-impl z-rust"><span class="z-storage z-type z-impl z-rust">impl</span> </span><span class="z-meta z-impl z-rust"><span class="z-entity z-name z-impl z-rust">Bar</span> </span><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust">    <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">from_foo</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">foo</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> Foo</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-modifier z-rust">*mut</span> <span class="z-storage z-type z-rust">Self</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span></span></span><span class="z-source z-rust"><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">        <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> ok because Foo and Bar have the same memory layout
+</span></span></span></span></span></span><span class="z-source z-rust"><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">        foo<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">cast</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+</span></span></span></span></span><span class="z-source z-rust"><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>This is very often used in lower-level languages like <em>C</em>. In Rust you don't see it that often, but
+it can sometimes also become relevant, especially in
+<a href="https://doc.rust-lang.org/nomicon/ffi.html">ffi contexts</a>.</p>
+<p>Further assume that we have a function that uses both structs. It sets the internal values of both
+structs and returns the internal value of the first. Note that here, raw pointers are used for the
+sake of example, as with safe rust we can't run into these kind of problems.</p>
+<pre data-lang="rust" class="language-rust z-code"><code class="language-rust" data-lang="rust"><span class="z-source z-rust"><span class="z-storage z-modifier z-rust">unsafe</span> <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">set_both_and_return_first</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">foo</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> Foo, <span class="z-variable z-parameter z-rust">bar</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> Bar</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-type z-rust">i32</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>foo</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span>foo <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">42</span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>bar</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span>bar <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">43</span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> we can return 42 as we know first is set to 42
+</span></span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> (foo and bar must not alias)
+</span></span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-constant z-numeric z-integer z-decimal z-rust">42</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<h2 id="where-things-go-wrong">Where things go wrong</h2>
+<p>As mentioned previously, there is a problem with this optimization: <code>Bar</code> can be constructed from
+a <code>Foo</code>, so <code>foo</code> and <code>bar</code> can point to the same data. But if this is the case, returning <code>42</code>
+would be wrong, as callers would expect that it is overwritten and <code>43</code> will be returned.</p>
+<p>So let's try to fix this by removing the optimization:</p>
+<pre data-lang="rust" class="language-rust z-code"><code class="language-rust" data-lang="rust"><span class="z-source z-rust"><span class="z-storage z-modifier z-rust">unsafe</span> <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">set_both_and_return_first</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">foo</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> Foo, <span class="z-variable z-parameter z-rust">bar</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> Bar</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-type z-rust">i32</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>foo</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span>foo <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">42</span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>bar</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span>bar <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">43</span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>foo</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span>foo
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>But remember that the compiler can actually do its own optimizations. The compiler can assume that
+no aliasing is happening, as the two types are different, and apply the very same optimization.</p>
+<p>Aliasing behavior can be controlled with the <code>-Zmutable-noalias</code> compiler parameter.
+<a href="https://stackoverflow.com/questions/57259126/why-does-the-rust-compiler-not-optimize-code-assuming-that-two-mutable-reference">At some point it was set to <code>no</code> by default</a>,
+so the compiler would assume aliasing might happen and thus skip certain optimizations, but
+<a href="https://github.com/rust-lang/rust/issues/54878#issuecomment-803880176">this is no longer true</a>.
+Nowadays the compiler <strong>does</strong> assume by default that no aliasing is happening, so the optimization
+above would be legal for it to apply.</p>
+<h2 id="the-easy-way-out">The easy way out</h2>
+<p>Currently, the Rust compiler does not apply this optimization, even if it is allowed to. But it
+could at some point, so the above code might break e.g. when updating the compiler version.</p>
+<p>One way to tackle this problem is of course to explicitly set <code>-Zmutable-noalias=no</code>, but this has
+the huge drawback that we can't just easily re-use the code in some other project, that might not
+have this flag set. Or we might forget setting it and run into the same problems again.</p>
+<h2 id="a-better-way-out">A better way out</h2>
+<p>There is another option to make sure no problem occurs: We can make it part of the function contract
+that no aliasing may occur. In other words, callers have to make sure that no aliasing occurs when
+calling the function.</p>
+<p>In Rust, this is usually done with <code>Safety</code> blocks in the function docs:</p>
+<pre data-lang="rust" class="language-rust z-code"><code class="language-rust" data-lang="rust"><span class="z-source z-rust"><span class="z-comment z-line z-documentation z-rust"><span class="z-punctuation z-definition z-comment z-rust">///</span> Write to both structs and return the value of the first struct (foo) afterwards.
+</span></span><span class="z-source z-rust"><span class="z-comment z-line z-documentation z-rust"><span class="z-punctuation z-definition z-comment z-rust">///</span>
+</span></span><span class="z-source z-rust"><span class="z-comment z-line z-documentation z-rust"><span class="z-punctuation z-definition z-comment z-rust">///</span> # Safety
+</span></span><span class="z-source z-rust"><span class="z-comment z-line z-documentation z-rust"><span class="z-punctuation z-definition z-comment z-rust">///</span> * Pointers must not be NULL
+</span></span><span class="z-source z-rust"><span class="z-comment z-line z-documentation z-rust"><span class="z-punctuation z-definition z-comment z-rust">///</span> * Pointers must not alias
+</span></span><span class="z-source z-rust"><span class="z-comment z-line z-documentation z-rust"><span class="z-punctuation z-definition z-comment z-rust">///</span> * Pointers must point to valid data
+</span></span><span class="z-source z-rust"><span class="z-storage z-modifier z-rust">unsafe</span> <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">set_both_and_return_first</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">foo</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> Foo, <span class="z-variable z-parameter z-rust">bar</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> Bar</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-type z-rust">i32</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> ...
+</span></span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>Furthermore, callers can add a <code>SAFETY</code> comment to indicate what they took into account to make
+calling the function sound:</p>
+<pre data-lang="rust" class="language-rust z-code"><code class="language-rust" data-lang="rust"><span class="z-source z-rust">    <span class="z-storage z-type z-rust">let</span> <span class="z-storage z-modifier z-rust">mut</span> foo <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Foo<span class="z-punctuation z-accessor z-rust">::</span></span>default<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust">    <span class="z-storage z-type z-rust">let</span> bar <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Bar<span class="z-punctuation z-accessor z-rust">::</span></span>from_foo<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> foo</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust">
+</span><span class="z-source z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> SAFETY:
+</span></span><span class="z-source z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> * Pointers are not null, created from reference
+</span></span><span class="z-source z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> * Pointer data is valid, created from reference
+</span></span><span class="z-source z-rust">    <span class="z-storage z-type z-rust">let</span> foo_val <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-storage z-modifier z-rust">unsafe</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span> <span class="z-support z-function z-rust">set_both_and_return_first</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>foo_raw<span class="z-punctuation z-separator z-rust">,</span> bar_raw</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></code></pre>
+<p>When reviewers stumble across this code, they can immediately see what the developer took into
+account and what he did not.</p>
+<p>When looking at this particular call and the docs of the function, it will become clear that
+the aliasing invariant was forgotten - both pointers clearly alias when creating a <code>Bar</code> raw
+pointer with <code>from_foo()</code>.</p>
+<p>This kind of documentation makes it very easy to spot these kind of bugs. A nice thing to keep in
+mind is that providing it can be enforced with the clippy lints
+<a href="https://rust-lang.github.io/rust-clippy/master/index.html#/missing_safety_doc">missing_safety_doc</a>
+and
+<a href="https://rust-lang.github.io/rust-clippy/master/index.html#/undocumented_unsafe_blocks">undocumented_unsafe_blocks</a>.</p>
+<h1 id="performance-implications">Performance implications</h1>
+<p>The <a href="https://developers.redhat.com/blog/2020/06/03/the-joys-and-perils-of-aliasing-in-c-and-c-part-2">second part of the article mentioned above</a>
+makes another interesting point: The compiler assumes that aliasing can occur for &quot;compatible
+pointers&quot;, while for &quot;incompatible types&quot;, it will assume it can not.</p>
+<p>The <code>C</code> and <code>C++</code> standard defines that two pointers are &quot;compatible&quot; if they have the same type.
+But as the access to all data is also allowed via <code>char*</code> pointers, those also are always
+considered &quot;compatible&quot;.</p>
+<p>So as soon as a function has a <code>char*</code> parameter that is written to, the compiler will assume that
+aliasing can occur and avoid certain optimizations. This is even true if you have wrapping types
+like <code>Vector</code> or <code>String</code>, e.g. when you write to a passed <code>&amp;String</code> parameter.</p>
+<h1 id="how-safe-rust-elegantly-avoids-aliasing">How safe rust elegantly avoids aliasing</h1>
+<p>Usually, you would use safe rust for a function like this:</p>
+<pre data-lang="rust" class="language-rust z-code"><code class="language-rust" data-lang="rust"><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">set_both_and_return_first</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">foo</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Foo, <span class="z-variable z-parameter z-rust">bar</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Bar</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-type z-rust">i32</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    foo<span class="z-punctuation z-accessor z-dot z-rust">.</span>foo <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">42</span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    bar<span class="z-punctuation z-accessor z-dot z-rust">.</span>bar <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">43</span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust">    foo<span class="z-punctuation z-accessor z-dot z-rust">.</span>foo
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>But as <code>foo</code> and <code>bar</code> are mutably borrowed,
+<a href="https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html">no other existing references to the data are allowed</a>.
+Thus, no aliasing can ever
+occur in safe Rust, as we are never allowed to create another reference to the same data.</p>
+
+      <nav>
+        <div>
+          <a href="https://pantos9000.github.io/data-races-vs-race-conditions/">&#8249; Data Races vs Race Conditions</a>
+        </div>
+        <div>
+          <a href="https://pantos9000.github.io/an-unsound-cell-implementation/"> An unsound cell implementation &#8250;</a>
+        </div>
+      </nav>
+    </article>
+
+    <div class="sblock">
+      <div class="blockdiv sticky">
+        <a class="b s150" href="#">Index</a>
+        <div>
+          <a href="#introduction">Introduction</a>
+        </div>
+        <div>
+          <a href="#a-simple-example">A simple example</a>
+        </div>
+        <div class="hpad">
+          <a href="#where-things-go-wrong"><small>- Where things go wrong</small></a>
+        </div>
+        <div class="hpad">
+          <a href="#the-easy-way-out"><small>- The easy way out</small></a>
+        </div>
+        <div class="hpad">
+          <a href="#a-better-way-out"><small>- A better way out</small></a>
+        </div>
+        <div>
+          <a href="#performance-implications">Performance implications</a>
+        </div>
+        <div>
+          <a href="#how-safe-rust-elegantly-avoids-aliasing">How safe rust elegantly avoids aliasing</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <hr />
+    <div class="c">
+      <nav class="tpad"><div><a href="https://github.com/pantos9000/" target="_blank" title="Github"><i type="Button" class="svg github" title="Github"></i></a></div></nav>
+      <nav class="vpad">
+        <a class="rpad" href="https://pantos9000.github.io/about/"> About </a>
+        <a class="rpad" href="https://pantos9000.github.io/privacy/"> Privacy </a>
+        <a class="rpad" href="https://pantos9000.github.io/sitemap.xml" target="_blank"> Sitemap </a>
+      </nav>
+      <p class="s90"> &copy; <span id="year">2024</span> Pantos' Periphrases</p>
+      <p class="s90">Powered by <a href="https://www.getzola.org/" target="_blank">Zola</a> & <a href="https://github.com/jieiku/abridge/" target="_blank">Abridge</a></p>
+    </div>
+  </footer><span class="topout">
+<span class="topleft"> </span><a href="#" class="top" title="Back to Top"><i class="svgs svgh angu"></i></a>
+</span>
+</body>
+</html>

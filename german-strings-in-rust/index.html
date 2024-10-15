@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://pantos9000.github.io/js/theme.min.js" integrity="sha384-pb++s6uBRKaQv+iAXpgA/H3IlpLZdO14tTwuCI7uXmz4aaZdByoCcM+6BhynMq/1"></script>
+  <link rel="stylesheet" href="https://pantos9000.github.io/abridge.css?h=fd19da75e81a79102afd" />
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="base" content="https://pantos9000.github.io" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#333333" />
+  <meta name="msapplication-TileColor" content="#333333" />
+  <link rel="manifest" href="https://pantos9000.github.io/favicon/manifest.json" />
+  <link rel="mask-icon" href="https://pantos9000.github.io/favicon/safari-pinned-tab.svg" color="#5bbad5" />
+  <link rel="apple-touch-icon" sizes="180x180" href="https://pantos9000.github.io/favicon/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="https://pantos9000.github.io/favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="https://pantos9000.github.io/favicon/favicon-16x16.png" />
+  <meta name="robots" content="index, follow" />
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <title>German Strings in Rust | Pantos' Periphrases</title>
+  <meta name="author" content="Pantos" />
+  <meta name="copyright" content="Pantos&#x27; Periphrases" />
+  <meta name="description" content="Ideas that use an unnecessarily large number of words to express" />
+  <link rel="canonical" href="https://pantos9000.github.io/german-strings-in-rust/" />
+  <meta name="keywords" content="rust, linux" />
+  <script defer src="https://pantos9000.github.io/js/abridge.min.js?h=f0dd8dfd4cea819cfbc9" integrity="sha384-Zxtl536qNH4+tuZDSSLJWOtMLL/T5AxeD+unOQyqtvZD9RYA/CYxDZrYYC0vGIg+"></script>
+  <noscript><link rel="stylesheet" href="https://pantos9000.github.io/nojs.css" /></noscript>
+</head>
+<body>
+  <header>
+    <nav>
+      <div><big><a href="https://pantos9000.github.io" title="Pantos&#x27; Periphrases"><font color="#09f">P</font>antos` <font color="#09f">P</font>eriphrases</a></big></div>
+      <div>
+
+        <div>
+          <ul><li><a class="s110" href="https://pantos9000.github.io/archive/"> Posts </a></li><li><a class="s110" href="https://pantos9000.github.io/tags/"> Tags </a></li><li><a class="s110" href="https://pantos9000.github.io/about/"> About </a></li><li><i type="reset" id="mode" class="js svgs adjust"></i></ul>
+        </div>
+
+        <div>
+          <div>
+            <form autocomplete=off class="js" name="goSearch" id="searchbox">
+              <div class="searchd">
+                <input id="searchinput" type="text" placeholder="Search" title="Search" />
+                <button type="submit" title="Search" class="svgs svgm search"></button>
+              </div>
+              <div class="results"><div id="suggestions"></div></div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </nav>
+    <div class="desc">Ideas that use an unnecessarily large number of words to express</div>
+    <hr />
+  </header>
+  <main>
+    <article>
+      <h1><a href="https://pantos9000.github.io/german-strings-in-rust/">German Strings in Rust</a></h1>
+
+      <span class="s95"> Pantos <span class="rpad"></span> September 27, 2024 <span class="rpad"></span> #<a href="https://pantos9000.github.io/tags/rust/">Rust</a>  #<a href="https://pantos9000.github.io/tags/string/">String</a>  #<a href="https://pantos9000.github.io/tags/memory/">Memory</a>  #<a href="https://pantos9000.github.io/tags/representation/">Representation</a>  #<a href="https://pantos9000.github.io/tags/alignment/">Alignment</a>  #<a href="https://pantos9000.github.io/tags/layout/">Layout</a> </span>
+
+    
+
+
+<p>This <a href="https://tunglevo.com/note/an-optimization-thats-impossible-in-rust/">very interesting article</a>
+describes the very impressive way of how to implement German Strings in Rust - Strings that are
+allocated on the stack if they are short enough. Read the articles for details, here I will only
+quickly note down my thoughts and tinkering a bit.</p>
+<p>The main problem that article is solving is Rust's struct memory layout. As the main point of
+implementing that new string is performance, the layout of it should be as concise and small as
+possible, without wasting any space.</p>
+<p>I will quickly go over the different challenges that the article's authors tackled.</p>
+<h1 id="alignment">Alignment</h1>
+<p>Looking at the <a href="https://doc.rust-lang.org/reference/type-layout.html">Rust memory layout rules</a>,
+we can see that each struct has an alignment. If a struct consists of different alignments, the
+biggest one is chosen.</p>
+<p>As a quick example, assume the following structs:</p>
+<pre data-lang="Rust" class="language-Rust z-code"><code class="language-Rust" data-lang="Rust"><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Foo</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">x</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">u32</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">bar</span><span class="z-punctuation z-separator z-type z-rust">:</span> Bar,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span><span class="z-source z-rust">
+</span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Bar</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">len</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">u32</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">buf</span><span class="z-punctuation z-separator z-type z-rust">:</span> [<span class="z-storage z-type z-rust">u8</span>; 8],
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>We can check the size and alignment with <code>std::mem::size_of()</code> and <code>std::mem::align_of()</code>, reporting
+us a size of 16 for <code>Foo</code> and a size of 12 for <code>Bar</code>, both having an alignment of 4.</p>
+<p>Next, we exchange <code>buf</code> in <code>Bar</code>:</p>
+<pre data-lang="Rust" class="language-Rust z-code"><code class="language-Rust" data-lang="Rust"><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Bar</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">len</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">u32</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">val</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">u64</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>Technically, it has the same size, but a <code>u64</code> has an alignment of 8! This results in a padding
+inserted in our structs by the compiler, making them bigger. <code>Foo</code> now has a size of 24, <code>Bar</code>
+has 16. Both have an alignment of 8 now.</p>
+<p>We can tell Rust to apply a different alignment though:</p>
+<pre data-lang="Rust" class="language-Rust z-code"><code class="language-Rust" data-lang="Rust"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">repr</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-meta z-function-call z-rust"><span class="z-variable z-function z-rust">packed</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-function-call z-rust">4</span><span class="z-meta z-function-call z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+</span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Bar</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">len</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">u32</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust">    <span class="z-variable z-other z-member z-rust">val</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">u64</span>,
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>Now it is back to the original size with 16 and 12. But this has a huge drawback: If we try to
+create a reference to <code>val</code>, the compiler will nag at us:</p>
+<pre data-lang="text" class="language-text z-code"><code class="language-text" data-lang="text"><span class="z-text z-plain">error[E0793]: reference to packed field is unaligned
+</span><span class="z-text z-plain">  --&gt; src/main.rs:24:15
+</span><span class="z-text z-plain">   |
+</span><span class="z-text z-plain">24 |     let val = &amp;foo._bar.val;
+</span><span class="z-text z-plain">   |               ^^^^^^^^^^^^^^
+</span><span class="z-text z-plain">   |
+</span><span class="z-text z-plain">   = note: packed structs are only aligned by one byte, and many modern architectures penalize
+</span><span class="z-text z-plain">           unaligned field accesses
+</span><span class="z-text z-plain">   = note: creating a misaligned reference is undefined behavior (even if that reference is never
+</span><span class="z-text z-plain">           dereferenced)
+</span><span class="z-text z-plain">   = help: copy the field contents to a local variable, or replace the reference with a raw pointer
+</span><span class="z-text z-plain">           and use `read_unaligned`/`write_unaligned` (loads and stores via `*p` must be properly
+</span><span class="z-text z-plain">           aligned even when using raw pointers)
+</span><span class="z-text z-plain">
+</span><span class="z-text z-plain">For more information about this error, try `rustc --explain E0793`.
+</span></code></pre>
+<p>This is also noted in the
+<a href="https://doc.rust-lang.org/reference/type-layout.html#the-alignment-modifiers">Rust layout rules</a>.</p>
+<p>This is solved by the article's authors by applying a quite clever layout. Read the article for
+(a lot) more details.</p>
+<h1 id="field-order">Field order</h1>
+<p>Another problem is that Rust does not guarantee the order of the different fields.
+The <a href="https://doc.rust-lang.org/reference/type-layout.html#the-rust-representation">layout rules</a>
+state that the only guarantees that the Rust representation provides are:</p>
+<blockquote>
+<ul>
+<li>The fields are properly aligned.</li>
+<li>The fields do not overlap.</li>
+<li>The alignment of the type is at least the maximum alignment of its fields.</li>
+</ul>
+</blockquote>
+<p>This can be easily fixed though by applying the <code>C</code> representation with <code>#[repr(C)]</code>.</p>
+<h1 id="fat-pointers">Fat pointers</h1>
+<p>Yet another thing to be solved is that <a href="https://doc.rust-lang.org/reference/dynamically-sized-types.html">dynamically sized types (DSTs) in Rust</a>
+require <strong>Fat pointers</strong>. For example, on <em>x86_64</em>, pointers normally have a size of <code>8</code>, while fat
+pointers have a size of <code>16</code>. They have to store extra information, such as an array's length or
+<a href="https://doc.rust-lang.org/reference/types/trait-object.html?highlight=vtable">a pointer to the vtable</a>
+of the actual type.</p>
+<pre data-lang="Rust" class="language-Rust z-code"><code class="language-Rust" data-lang="Rust"><span class="z-source z-rust"><span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> u8 arrays of unknown size are DSTs
+</span></span><span class="z-source z-rust"><span class="z-support z-macro z-rust">assert_eq!</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">16</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">mem<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">size_of<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-meta z-generic z-rust"><span class="z-support z-type z-rust">Box</span><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust"><span class="z-support z-macro z-rust">assert_eq!</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">16</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">mem<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">size_of<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-keyword z-operator z-rust">&amp;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust"><span class="z-support z-macro z-rust">assert_eq!</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">16</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">mem<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">size_of<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-storage z-modifier z-rust">*mut</span> <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust">
+</span><span class="z-source z-rust"><span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> u8 arrays of known size are not DSTs
+</span></span><span class="z-source z-rust"><span class="z-support z-macro z-rust">assert_eq!</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">8</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">mem<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">size_of<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-meta z-generic z-rust"><span class="z-support z-type z-rust">Box</span><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-separator z-rust">;</span></span> <span class="z-constant z-numeric z-integer z-decimal z-rust">42</span><span class="z-punctuation z-section z-group z-end z-rust">]</span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust"><span class="z-support z-macro z-rust">assert_eq!</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">8</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">mem<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">size_of<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-keyword z-operator z-rust">&amp;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-separator z-rust">;</span></span> <span class="z-constant z-numeric z-integer z-decimal z-rust">42</span><span class="z-punctuation z-section z-group z-end z-rust">]</span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust"><span class="z-support z-macro z-rust">assert_eq!</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">8</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">mem<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">size_of<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-storage z-modifier z-rust">*mut</span> <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-separator z-rust">;</span></span> <span class="z-constant z-numeric z-integer z-decimal z-rust">42</span><span class="z-punctuation z-section z-group z-end z-rust">]</span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-source z-rust">
+</span><span class="z-source z-rust"><span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> references to dyn trait objects are also DSTs
+</span></span><span class="z-source z-rust"><span class="z-support z-macro z-rust">assert_eq!</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">16</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">mem<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">size_of<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-keyword z-operator z-rust">&amp;</span>dyn <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">any<span class="z-punctuation z-accessor z-rust">::</span></span>Any<span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></code></pre>
+<p>But this again wastes space, as the length of the String is already stored in the struct. Contained
+pointers don't need to have the extra length information.</p>
+<p>This is solved by converting in between thin and fat pointers. The following example is a bit
+simpler, without a wrapping type:</p>
+<pre data-lang="Rust" class="language-Rust z-code"><code class="language-Rust" data-lang="Rust"><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">fat_to_thin</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">ptr</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> [<span class="z-storage z-type z-rust">u8</span>]</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-modifier z-rust">*mut</span> </span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-separator z-rust">;</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">0</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span><span class="z-source z-rust"><span class="z-meta z-block z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> fat to thin is easy, just cast
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-block z-rust">    ptr<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">cast</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+</span></span><span class="z-source z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+</span><span class="z-source z-rust">
+</span><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">thin_to_fat</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">ptr</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-modifier z-rust">*mut</span> [<span class="z-storage z-type z-rust">u8</span>; 0], <span class="z-variable z-parameter z-rust">len</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">usize</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-modifier z-rust">*mut</span> </span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">u8</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+</span></span><span class="z-source z-rust"><span class="z-meta z-block z-rust">    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> thin to fat is a bit trickier, we have to convert to a slice first
+</span></span></span><span class="z-source z-rust"><span class="z-meta z-block z-rust">    <span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">ptr<span class="z-punctuation z-accessor z-rust">::</span></span>slice_from_raw_parts_mut<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>ptr<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">cast</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span> len</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+</span></span><span class="z-source z-rust"><span class="z-meta z-block z-rust"></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+</span></code></pre>
+<h1 id="a-sidenote-on-phantomdata">A Sidenote on Phantomdata</h1>
+<p>Mind the <code>PhantomData</code> in one of the structs. When implementing containers with unsafe code, it
+is important to remember some of the quirks of the Rust language, especially when handling <code>*mut</code>
+or <code>NonNull</code> pointers.</p>
+<p><code>PhantomData</code> is required:</p>
+<ul>
+<li>To allow unused lifetime or type parameters in your generics</li>
+<li>To enforce <strong>Variance</strong> I already wrote another
+<a href="https://pantos9000.github.io/an-unsound-cell-implementation/">post</a> about this.</li>
+<li>To enable the <a href="https://doc.rust-lang.org/std/ops/trait.Drop.html#drop-check">drop check</a> (this is
+subject to change)</li>
+</ul>
+<p>See the <a href="https://doc.rust-lang.org/std/marker/struct.PhantomData.html">PhantomData docs</a> for more
+info and examples.</p>
+
+      <nav>
+        <div>
+        </div>
+        <div>
+          <a href="https://pantos9000.github.io/data-races-vs-race-conditions/"> Data Races vs Race Conditions &#8250;</a>
+        </div>
+      </nav>
+    </article>
+
+    <div class="sblock">
+      <div class="blockdiv sticky">
+        <a class="b s150" href="#">Index</a>
+        <div>
+          <a href="#alignment">Alignment</a>
+        </div>
+        <div>
+          <a href="#field-order">Field order</a>
+        </div>
+        <div>
+          <a href="#fat-pointers">Fat pointers</a>
+        </div>
+        <div>
+          <a href="#a-sidenote-on-phantomdata">A Sidenote on Phantomdata</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <hr />
+    <div class="c">
+      <nav class="tpad"><div><a href="https://github.com/pantos9000/" target="_blank" title="Github"><i type="Button" class="svg github" title="Github"></i></a></div></nav>
+      <nav class="vpad">
+        <a class="rpad" href="https://pantos9000.github.io/about/"> About </a>
+        <a class="rpad" href="https://pantos9000.github.io/privacy/"> Privacy </a>
+        <a class="rpad" href="https://pantos9000.github.io/sitemap.xml" target="_blank"> Sitemap </a>
+      </nav>
+      <p class="s90"> &copy; <span id="year">2024</span> Pantos' Periphrases</p>
+      <p class="s90">Powered by <a href="https://www.getzola.org/" target="_blank">Zola</a> & <a href="https://github.com/jieiku/abridge/" target="_blank">Abridge</a></p>
+    </div>
+  </footer><span class="topout">
+<span class="topleft"> </span><a href="#" class="top" title="Back to Top"><i class="svgs svgh angu"></i></a>
+</span>
+</body>
+</html>
